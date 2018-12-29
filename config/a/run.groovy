@@ -1,5 +1,4 @@
- #!/usr/bin/env groovy
-// v16
+ 
 def config = [
     components: [
        [ name: "itc-test1", kind: "service",repo: null, ci: [pr: "code2pr", master:"code2pr"] ],
