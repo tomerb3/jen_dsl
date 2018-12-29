@@ -1,43 +1,37 @@
 #!/usr/bin/env groovy
-
-// ver 32
-// need to check if hook is already there or not  ~/data/ text file 
-// need to add better slack for witness stage
-// need to tell what stage is failed on 
-
-
-
+// v16
 def config = [
-    components: [         
-          [ name: "itc-test1", kind: "service",repo: null, ci: [] ], 
-    //    [ name: "itc-ref-calculator-service", kind: "service",repo: null, ci: [pr: "code2", master:"code2"] ],
-    //    [ name: "itc-auth-service", kind: "service",repo: null, ci: [pr: "code2", master:"code2"] ],
-    //    [ name: "itc-registry-service", kind: "service",repo: null, ci: [pr: "code2", master:"code2"] ],
-    //    [ name: "itc-activity-service", kind: "service",repo: null, ci: [pr: "code2", master:"code2"] ],
-    //    [ name: "itc-workbench-service", kind: "service",repo: null, ci: [pr: "code2", master:"code2"] ],
-    //    [ name: "itc-portal-application", kind: "application",repo: null, ci: [pr: "code2", master:"code2"] ],
-    //    [ name: "itc-backoffice-application", kind: "application",repo: null, ci: [pr: "code2", master:"code2"] ],
-    //    [ name: "itc-search-application", kind: "application",repo: null, ci: [pr: "code2", master:"code2"] ],
-    //    [ name: "itc-login-application", kind: "application",repo: null, ci: [pr: "code2", master:"code2"] ],
-    //    [ name: "itc-player-application", kind: "application",repo: null, ci: [pr: "code2", master:"code2"] ],
-    //    [ name: "itc-build-tools", kind: "tools", repo: null, blockOn: [ "itc-build-tools" ] ,ci:[] ],
-    //    [ name: "itc-deployment-tools", kind: "tools",repo: null  ,ci:[]],
-    //    [ name: "itc-db-tools", kind: "tools",repo: null  ,ci:[]],
-    //    [ name: "itc-nodejs-service-library", kind: "npm", repo: null  ,ci:[]],
-    //    [ name: "itc-nodejs-security-library", kind: "npm", repo: null ,ci:[] ], 
-    //    [ name: "itc-activity-ingest-stack", kind: "stack",repo: null  ,ci:[]],
-    //    [ name: "itc-services-stack", kind: "stack",repo: null  ,ci:[]],
-    //    [ name: "itc-agent-simulation-diagnostics", kind: "diagnostics",repo: null  ,ci:[]],
-    //    [ name: "itc-diagnostic-tools", kind: "tools",repo: null  ,ci:[]],
-    //    [ name: "itc-ui-library", kind: "npm",repo: null  ,ci:[]],
-    //    [ name: "terraform", kind: "rpm",repo: null ,ci:[] ],
-    //    [ name: "itc-example-stack", kind: "stack",repo: null ,ci:[] ],
-    //    [ name: "itc-security-tools", kind: "tools",repo: null ,ci:[]],   
-    //    [ name: "itc-environment-stack", kind: "stack",repo: null ,ci:[] ],
+    components: [
+       [ name: "itc-test1", kind: "service",repo: null, ci: [pr: "code2pr", master:"code2pr"] ],
+       [ name: "itc-ref-calculator-service", kind: "service",repo: null, ci: [pr: "code2pr", master:"code2"] ],
+       [ name: "itc-auth-service", kind: "service",repo: null, ci: [pr: "code2pr", master:"code2"] ],
+       [ name: "itc-registry-service", kind: "service",repo: null, ci: [pr: "code2pr", master:"code2"] ],
+       [ name: "itc-activity-service", kind: "service",repo: null, ci: [pr: "code2pr", master:"code2"] ],
+       [ name: "itc-workbench-service", kind: "service",repo: null, ci: [pr: "code2pr", master:"code2"] ],
+       [ name: "itc-portal-application", kind: "application",repo: null, ci: [pr: "code2pr", master:"code2"] ],
+       [ name: "itc-backoffice-application", kind: "application",repo: null, ci: [pr: "code2pr", master:"code2"] ],
+       [ name: "itc-search-application", kind: "application",repo: null, ci: [pr: "code2pr", master:"code2"] ],
+       [ name: "itc-login-application", kind: "application",repo: null, ci: [pr: "code2pr", master:"code2"] ],
+       [ name: "itc-player-application", kind: "application",repo: null, ci: [pr: "code2pr", master:"code2"] ],
+       [ name: "itc-build-tools", kind: "tools", repo: null, blockOn: [ "itc-build-tools" ] ,ci:[] ],
+       [ name: "itc-deployment-tools", kind: "tools",repo: null  ,ci:[]],
+       [ name: "itc-db-tools", kind: "tools",repo: null  ,ci:[]],
+       [ name: "itc-nodejs-service-library", kind: "npm", repo: null  ,ci:[]],
+       [ name: "itc-nodejs-security-library", kind: "npm", repo: null ,ci:[] ],
+       [ name: "itc-activity-ingest-stack", kind: "stack",repo: null  ,ci:[]],
+       [ name: "itc-services-stack", kind: "stack",repo: null  ,ci:[]],
+       [ name: "itc-agent-simulation-diagnostics", kind: "diagnostics",repo: null  ,ci:[]],
+       [ name: "itc-diagnostic-tools", kind: "tools",repo: null  ,ci:[]],
+       [ name: "itc-ui-library", kind: "npm",repo: null  ,ci:[]],
+       [ name: "terraform", kind: "rpm",repo: null ,ci:[] ],
+       [ name: "itc-example-stack", kind: "stack",repo: null ,ci:[] ],
+       [ name: "itc-security-tools", kind: "tools",repo: null ,ci:[]],
+       [ name: "itc-environment-stack", kind: "stack",repo: null ,ci:[] ],
     ],
     environments: [
-         [ name: "code9", api: [ host: "code2-api01" ], witness: [ host: "code2-witness01" ] ],
-         
+         [ name: "code2", api: [ host: "code2-api01" ], witness: [ host: "code2-witness01" ] ],
+         [ name: "code2pr", api: [ host: "code2pr-api01" ], witness: [ host: "code2pr-witness01" ] ],
+         [ name: "code4", api: [ host: "code4-api01" ], witness: [ host: "code4-witness01" ] ],
     ],
     source: [
         git: [
@@ -51,6 +45,7 @@ def config = [
         rootJob: "itc-root",
         triggerJob: "pipeline-trigger",
         rpmPublishJob: "rpm-publish",
+        versionsPushJob: "versions-push",
         envUpdateJob: "env-update",
         diagnosticsRunJob: "diagnostics-run"
     ],
@@ -128,12 +123,29 @@ job(config.jenkins.jobPrefix + config.jenkins.rpmPublishJob) {
         '''.stripIndent())
     }
 }
+
+job(config.jenkins.jobPrefix + config.jenkins.versionsPushJob) {
+    label('docker && linux')
+
+    parameters {
+        stringParam('SOURCE_WORKSPACE', '', 'Which workspace container Versions artifacts to push')
+        stringParam('TARGET_CONF', '', 'Target configs path in deployment-configs')
+    }
+
+    steps {
+        shell('''
+            echo "Running ${JOB_NAME}"
+            env | sort
+            # cp ${SOURCE_WORKSPACE}/containers.conf \${JENKINS_HOME}/workspace/itc-deployment-configs/versions/
+        '''.stripIndent())
+    }
+}
+
 // ==================================================================================
 
 
 // ===============================  Diagnostics jobs  ===============================
 def scriptString = ""
-
 config.environments.each { environment ->
   def buildJobDiag = config.jenkins.jobPrefix + "env." + environment.name + ".diagnostics";
   pipelineJob(buildJobDiag) {
@@ -145,97 +157,52 @@ config.environments.each { environment ->
             stringParam('REPONAME', 'none', ' ')
             stringParam('USERNAME', 'none', ' ')
         }
-       properties { 
-               disableConcurrentBuilds() 
-              } 
+       properties {
+               disableConcurrentBuilds()
+              }
         definition {
             cps {
-                sandbox()       
+                sandbox()
  scriptString = """
-    import net.sf.json.JSONArray;
-    import net.sf.json.JSONObject;
-    def reponame =''
-    def stage_name = 'start_job'
-    def username = ''
-    node{
-    
+ node{
+ currentBuild.displayName = "#\${BUILD_ID} \${REPONAME}"
 
-      currentBuild.displayName = "#\${BUILD_ID} \${REPONAME}" 
-
-      if (TAGNEW == "latest") 
+      if (TAGNEW == "latest")
       {
         currentBuild.description = "Tag: MASTER by \${USERNAME}"
-      } 
+      }
       else
       {
-        currentBuild.description = "Tag: \${TAGNEW} by \${USERNAME}"  
+        currentBuild.description = "Tag: \${TAGNEW} by \${USERNAME}"
       }
-      wrap([\$class: 'BuildUser'])
-                         { 
-                             if (env.BUILD_USER)
-                              {
-								username = "\${BUILD_USER}"
-                              } else
-                              {
-                                 username = "\${USERNAME}"                
-                              }
-                         }
-
 
     label('docker && linux')
-   try {
-     stage('API'){  stage_name = 'api'
-      sh "ssh ${environment.api.host} \\"cd itc-simple-composition && ./update \${TAGNEW} \${REPONAME}  \\"  > /tmp/${environment.witness.host}_${stage_name} 2>&1 && cat /tmp/${environment.witness.host}_${stage_name} "
-     }
 
-     stage('Witness'){  stage_name = 'witness' 
-       sh "sleep 20 && ssh ${environment.witness.host} \\"sudo yum update -y itc-diagnostic-tools-ctl && cd itc-simple-composition && /opt/it/bin/it-diagnostics-ctl init --ecr-login && /opt/it/bin/it-diagnostics-ctl run-modules --pull --debug --tag=\${TAGNEW} --repo=\${REPONAME}\\" |grep ERROR -B 10 > /tmp/${environment.witness.host}_${stage_name} 2>&1 && cat /tmp/${environment.witness.host}_${stage_name}  "
-       sh "asdasd"
-     }
-   
-      stage('Docker-Logs'){ stage_name = 'docker_logs'
+   stage('API'){
+
+     sh "ssh ${environment.api.host} \\"cd itc-simple-composition && ./update \${TAGNEW} \${REPONAME} \\" "
+
+    }
+
+  stage('Witness'){
+        sh "sleep 20 && ssh ${environment.witness.host} \\"sudo yum update -y itc-diagnostic-tools-ctl && cd itc-simple-composition && /opt/it/bin/it-diagnostics-ctl init --ecr-login && /opt/it/bin/it-diagnostics-ctl run-modules --pull --debug --tag=\${TAGNEW} --repo=\${REPONAME}\\"  "
+   }
+
+    stage('Docker-Logs'){
        sh 'ssh ${environment.api.host} "cd && cd itc-simple-composition && docker-compose logs"'
-      }
-   
-     } catch (err) {
-                currentBuild.result = "FAILURE"
-                reponame = 'test'
-                 slack_notify(currentBuild.result,\${TAGNEW}, username, stage_name, reponame)
-                throw err
-        }
+    }
 
  }
-
- def slack_notify(String buildStatus,String tagname, String username, String stage_name, String reponame)
-  {
-       JSONArray attachments = new JSONArray();
-       JSONObject attachment = new JSONObject();
-       attachment.put('text','Fail Diagnostic phase');
-       attachment.put('color','#36a64f');
-       attachment.put('pretext','Diagnostic');
-       attachment.put('author_name','Diagnostic fail log inspect:');
-       attachment.put('author_link','http://flickr.com/bobby/');
-       attachment.put('author_icon','http://flickr.com/icons/bobby.jpg');
-       attachment.put('title',reponame);
-       attachment.put('title_link','https://api.slack.com/');
-       text_log = readFile '/tmp/${environment.witness.host}_${stage_name}'
-       attachment.put('text',text_log);
-       attachment.put('footer',"tag: ${tagname} , user: ${username} stage: ${stage_name}");
-       attachment.put('footer_icon','https://emojis.slackmojis.com/emojis/images/1545362301/5101/smoothprim.gif?1545362301');
-       attachment.put('color','#439FE0');
-       attachments.add(attachment);
-       slackSend(color: '#00FF00', channel: 'debug', attachments: attachments.toString())   
-  }
- """        
+ """
     script(scriptString)
     scriptString = ""
             }
          }
-     } 
+     }
    }
 // ===============================  Diagnostics jobs  ===============================
 
- 
+
 
 // =================================== MASTER/PR ===================================
 config.components.each { component ->
@@ -251,10 +218,10 @@ config.components.each { component ->
                     def taginfo = ''
                     currentBuild.result = 'SUCCESS'
                     try {
-                        def ciEnv = "${component.ci?:''}"                 
-                       
+                        def ciEnv = "${component.ci?:''}"
+
                         wrap([\$class: 'BuildUser'])
-                         { 
+                         {
                              if (env.BUILD_USER)
                               {
                                 currentBuild.displayName = "#\${BUILD_ID} \${BUILD_USER}"
@@ -262,16 +229,16 @@ config.components.each { component ->
                               } else
                               {
                                  currentBuild.displayName = "#\${BUILD_ID} Push \${BRANCH_NAME_actor_display_name}"
-                                 username = "Push \${BRANCH_NAME_actor_display_name}"                            
+                                 username = "\${BRANCH_NAME_actor_display_name}"
                               }
                          }
-                      
+
                              if (ciEnv) {
-                                 if (env.BRANCH_NAME_pullrequest_id) 
+                                 if (env.BRANCH_NAME_pullrequest_id)
                                    {
                                         diag= "${component.ci.pr?:''}"
                                         taginfo = "PR \${BRANCH_NAME_pullrequest_source_branch_name} ID \${BRANCH_NAME_pullrequest_id}"
-                                        currentBuild.description = "\${taginfo} in \${diag}"  
+                                        currentBuild.description = "\${taginfo} in \${diag}"
                                    } else
                                    {
                                         taginfo = "MASTER"
@@ -279,20 +246,20 @@ config.components.each { component ->
                                         currentBuild.description = "\${taginfo} in \${diag}"
                                    }
 
-                              }else 
+                              }else
                               {
                                     diag="Skip"
                                     if (env.BRANCH_NAME_pullrequest_id)
                                      {
                                             taginfo = "PR \${BRANCH_NAME_pullrequest_source_branch_name} ID \${BRANCH_NAME_pullrequest_id}"
-                                            currentBuild.description = "PR \${BRANCH_NAME_pullrequest_source_branch_name} ID \${BRANCH_NAME_pullrequest_id}"  
+                                            currentBuild.description = "PR \${BRANCH_NAME_pullrequest_source_branch_name} ID \${BRANCH_NAME_pullrequest_id}"
                                      } else
                                        {
                                             taginfo = "MASTER"
                                             currentBuild.description = "\${taginfo}"
                                       }
                                }
-    
+
                         stage('Prepare') {
                         slackSend message: "\${env.JOB_NAME} - #\${env.BUILD_NUMBER} Started... (<\${env.BUILD_URL}|Open>)"
                         checkout([
@@ -306,8 +273,8 @@ config.components.each { component ->
                                 url: 'git@bitbucket.org:observeit/${name}.git'
                             ]]
                         ])
-                
-                 stage("Git Checkout") 
+
+                 stage("Git Checkout")
                  {
 
                             if ("\${BRANCH_NAME_pullrequest_source_branch_name}" != 'master') {
@@ -322,11 +289,11 @@ config.components.each { component ->
                                 sh "git merge --no-commit origin/\${BRANCH_NAME_pullrequest_source_branch_name}"
                              } else
                              {
-                               if ("\${REV_VER}" != 'master') 
+                               if ("\${REV_VER}" != 'master')
                                 {
                                    sh "git checkout \${REV_VER}"
                                 }
-                             
+
                             }
                         }
 
@@ -375,7 +342,7 @@ config.components.each { component ->
   def scriptsectionPublishNPM =
             """
                     stage('Publish NPM') {
-                        if ("\${DEBUG}" == 'no'){ 
+                        if ("\${DEBUG}" == 'no'){
                            sh '\${JENKINS_HOME}/workspace/itc-build-tools/src/scripts/it-build-ctl publish-npm'
                         }
                     }
@@ -383,7 +350,7 @@ config.components.each { component ->
 
   def scriptsectionEND =
         """
-              
+
 
                 stage('Cleanup')
                  {
@@ -395,40 +362,44 @@ config.components.each { component ->
                   }
 
                 stage((ciEnv ? ("Diagnostics" ) : "Skip Diagnostics")) {
-                    
-        if (ciEnv) 
+
+        if (ciEnv)
          {
             if (env.BRANCH_NAME_pullrequest_id)
-             {    
-                if ("\${DEBUG}" == 'no')  
+             {
+                if ("\${DEBUG}" == 'no')
                  {
+                        build job: 'seeded.versions-push', parameters: [string(name: 'SOURCE_WORKSPACE', value: "\${env.WORKSPACE}"), string(name: 'TARGET_CONF', value: "\${}")]
+
                         sh 'git describe --long HEAD |cut -d "-" -f3-9 |cut -c2-8|head -1 > myfile.txt'
                         TAGNEW = readFile 'myfile.txt'
                         build job: "${config.jenkins.jobPrefix}env." + diag + ".diagnostics", parameters: [string(name: 'TAGNEW', value:"pr"+env.BRANCH_NAME_pullrequest_id+"-"+TAGNEW.trim() + ""),string(name:'REPONAME', value: env.BRANCH_NAME_pullrequest_destination_repository_name),string(name:'USERNAME', value: username)]
                  }
-              } else 
+              } else
               {
-                if ("\${DEBUG}" == 'no') 
+                if ("\${DEBUG}" == 'no')
                   {
+                        build job: 'seeded.versions-push', parameters: [string(name: 'SOURCE_WORKSPACE', value: "\${env.WORKSPACE}"), string(name: 'TARGET_CONF', value: "\${}")]
+
                         sh 'echo \${JOB_NAME}|cut -d "." -f2> myfile.txt'
                         REPONAME = readFile 'myfile.txt'
                         build job: "${config.jenkins.jobPrefix}env." + diag + ".diagnostics", parameters: [ string(name:'REPONAME', value: REPONAME),string(name:'USERNAME', value: username)]
                   }
               }
-          } else 
+          } else
           {
                   sh 'echo "WARNING: CI Environment Not Defined - Skipping..."'
           }
         }
             } catch (err) {
                 currentBuild.result = "FAILURE"
-                bitbucketStatusNotify ( buildState: 'FAILED' ) 
+                bitbucketStatusNotify ( buildState: 'FAILED' )
                 throw err
             } finally {
-                if (currentBuild.result == 'SUCCESS') { bitbucketStatusNotify ( buildState: 'SUCCESSFUL' )} 
+                if (currentBuild.result == 'SUCCESS') { bitbucketStatusNotify ( buildState: 'SUCCESSFUL' )}
                 println "username \${username}"
                 println "diag \${diag}"
-                if ("\${SLACK}" == 'yes') 
+                if ("\${SLACK}" == 'yes')
                   {
                     slackSend message: " \${env.JOB_NAME} - #\${env.BUILD_NUMBER} by \${username} Tag: \${BRANCH_NAME_pullrequest_source_branch_name} Diagnostic: \${diag} \${currentBuild.result} after \${currentBuild.durationString.replace(' and counting', '')} (<\${env.BUILD_URL}|Open>)",
                     channel: ((currentBuild.result == "FAILURE")?"Jenkins-failures":"null"),
@@ -441,10 +412,10 @@ config.components.each { component ->
             }
         }
 
-        """    
+        """
    def scriptsectionPublishRPM =
             """
-               if ("\${BRANCH_NAME_pullrequest_source_branch_name}" == 'master') 
+               if ("\${BRANCH_NAME_pullrequest_source_branch_name}" == 'master')
                  {
                     stage('Publish RPMs') {
                         //sh '\${JENKINS_HOME}/workspace/itc-build-tools/src/scripts/it-build-ctl publish-rpms'
@@ -459,7 +430,7 @@ config.components.each { component ->
     scriptString += scriptsectionStart
     scriptString += scriptsectionBuildRPM
     scriptString += scriptsectionPublishRPM
-    if (component.kind == "npm") {scriptString += scriptsectionPublishNPM} 
+    if (component.kind == "npm") {scriptString += scriptsectionPublishNPM}
     if (component.kind != "npm") {scriptString += scriptsectionBuildContainer
                scriptString += scriptsectionPublishContainer}
     if (component.kind != "tools") {scriptString += scriptsectionSonar}
@@ -471,12 +442,12 @@ config.components.each { component ->
         parameters {
              stringParam('REV_VER', 'master', 'Last 7 Hash git commit for specific CI Build')
              stringParam('BRANCH_NAME_pullrequest_source_branch_name', 'master', 'pull request source branch ')
-             choiceParam('SLACK', ['no','yes','no'])          
-             choiceParam('DEBUG', ['yes','no','yes'])
+             choiceParam('SLACK', ['yes','no'])
+             choiceParam('DEBUG', ['no','yes'])
         }
-       properties { 
-           disableConcurrentBuilds() 
-         } 
+       properties {
+           disableConcurrentBuilds()
+         }
        triggers {
             genericTrigger {
                 genericVariables {
@@ -507,41 +478,6 @@ config.components.each { component ->
     scriptString = ""
             }
          }
-     } 
+     }
    }
  //=================================== MASTER/PR ===================================
-
-
-
-
-
-
-
-// use    data   folder  in jenkins home folder and also file repo_list_with_hook.txt
-// make sure  DSL job has 2 password strings   cid   and  csecret   for ob serveit oAUTH
-def dataFile = new File("/var/lib/jenkins/data/repo_list_with_hook.txt")
-def result1 = ''
-def hookname = 'push_and_pr'
-//======================= Hook Add ==========================
-print "hook fix phase if needed"
-config.components.each { component ->
-  def name = component['name']
-  //def repo = component['repo'] ?: config.source.git.defaultBase + name;
-  def buildJob = config.jenkins.jobPrefix + name + config.jenkins.jobSuffix;
-  def lines = dataFile.readLines()
-  lines.each { String line ->
-    result1 = "0"
-    if ( name == line )
-      {
-        result1 = "1"
-      }
-    }
-    if ( result1 == "0" ) { println 'need to run add hook script for '+name
-       def sout = new StringBuilder(), serr = new StringBuilder()
-       def proc = "/var/lib/jenkins/workspace/test-seed-groovy-pipeline/scripts/add-webhook-to-all-itc-repo.sh ${name} ${hookname} ${cid} ${csecret}".execute()
-       proc.consumeProcessOutput(sout, serr)
-       proc.waitForOrKill(1000)
-       println "out> $sout err> $serr"                      
-      }
-  }
-// ==========================================================
