@@ -1,4 +1,4 @@
-#!/usr/bin/env groovy
+ #!/usr/bin/env groovy
 // v16
 def config = [
     components: [
@@ -202,4 +202,282 @@ config.environments.each { environment ->
    }
 // ===============================  Diagnostics jobs  ===============================
 
- 
+
+
+// =================================== MASTER/PR ===================================
+config.components.each { component ->
+      scriptString = "";
+    def name = component['name']
+    def repo = component['repo'] ?: config.source.git.defaultBase + name;
+    def buildJob = config.jenkins.jobPrefix + name + config.jenkins.jobSuffix;
+    def scriptsectionStart =
+                """
+                node('linux') {
+                    def username = ''
+                    def diag = ''
+                    def taginfo = ''
+                    currentBuild.result = 'SUCCESS'
+                    try {
+                        def ciEnv = "${component.ci?:''}"
+
+                        wrap([\$class: 'BuildUser'])
+                         {
+                             if (env.BUILD_USER)
+                              {
+                                currentBuild.displayName = "#\${BUILD_ID} \${BUILD_USER}"
+								username = "\${BUILD_USER}"
+                              } else
+                              {
+                                 currentBuild.displayName = "#\${BUILD_ID} Push \${BRANCH_NAME_actor_display_name}"
+                                 username = "\${BRANCH_NAME_actor_display_name}"
+                              }
+                         }
+
+                             if (ciEnv) {
+                                 if (env.BRANCH_NAME_pullrequest_id)
+                                   {
+                                        diag= "${component.ci.pr?:''}"
+                                        taginfo = "PR \${BRANCH_NAME_pullrequest_source_branch_name} ID \${BRANCH_NAME_pullrequest_id}"
+                                        currentBuild.description = "\${taginfo} in \${diag}"
+                                   } else
+                                   {
+                                        taginfo = "MASTER"
+                                        diag= "${component.ci.master?:''}"
+                                        currentBuild.description = "\${taginfo} in \${diag}"
+                                   }
+
+                              }else
+                              {
+                                    diag="Skip"
+                                    if (env.BRANCH_NAME_pullrequest_id)
+                                     {
+                                            taginfo = "PR \${BRANCH_NAME_pullrequest_source_branch_name} ID \${BRANCH_NAME_pullrequest_id}"
+                                            currentBuild.description = "PR \${BRANCH_NAME_pullrequest_source_branch_name} ID \${BRANCH_NAME_pullrequest_id}"
+                                     } else
+                                       {
+                                            taginfo = "MASTER"
+                                            currentBuild.description = "\${taginfo}"
+                                      }
+                               }
+
+                        stage('Prepare') {
+                        slackSend message: "\${env.JOB_NAME} - #\${env.BUILD_NUMBER} Started... (<\${env.BUILD_URL}|Open>)"
+                        checkout([
+                            \$class: 'GitSCM',
+                            branches: [[name: "*/\${BRANCH_NAME_pullrequest_source_branch_name}"]],
+                            doGenerateSubmoduleConfigurations: false,
+                            extensions: [],
+                            submoduleCfg: [],
+                            userRemoteConfigs: [[
+                                credentialsId: '5a707667-4eed-4f75-89c2-125f74d41057',
+                                url: 'git@bitbucket.org:observeit/${name}.git'
+                            ]]
+                        ])
+
+                 stage("Git Checkout")
+                 {
+
+                            if ("\${BRANCH_NAME_pullrequest_source_branch_name}" != 'master') {
+                                sh 'env |sort |grep "^BRANCH_NAME_pullrequest"'
+                                sh "git checkout master"
+                                sh "git pull origin master"
+                                sh "git checkout master"
+                                sh "git reset --hard HEAD"
+                                sh "git clean -fdx"
+                                sh "git checkout \${BRANCH_NAME_pullrequest_source_branch_name}"
+                                sh "git checkout \${REV_VER}"
+                                sh "git merge --no-commit origin/\${BRANCH_NAME_pullrequest_source_branch_name}"
+                             } else
+                             {
+                               if ("\${REV_VER}" != 'master')
+                                {
+                                   sh "git checkout \${REV_VER}"
+                                }
+
+                            }
+                        }
+
+                   sh '\${JENKINS_HOME}/workspace/itc-build-tools/src/scripts/it-build-ctl init --ecr-login'
+
+                }
+                """
+    def scriptsectionBuildRPM =
+                """
+
+                        stage('Build RPMs') {
+                         if ("\${DEBUG}" == 'no'){
+                            sh '\${JENKINS_HOME}/workspace/itc-build-tools/src/scripts/it-build-ctl build-rpms'
+                         }
+                        }
+
+                """
+   def scriptsectionSonar =
+            """
+                    stage('Sonarqube') {
+                         if ("\${DEBUG}" == 'no'){
+                            sh '\${JENKINS_HOME}/workspace/itc-build-tools/src/scripts/it-build-ctl run-codescan'
+                        }
+                    }
+            """
+  def scriptsectionBuildContainer =
+            """
+
+                    stage('Build Containers') {
+                        if ("\${DEBUG}" == 'no'){
+                          sh '\${JENKINS_HOME}/workspace/itc-build-tools/src/scripts/it-build-ctl build-containers'
+                        }
+                    }
+             """
+  def scriptsectionPublishContainer =
+             """
+
+                    stage('Publish Containers') {
+                       if ("\${DEBUG}" == 'no'){
+                          sh '\${JENKINS_HOME}/workspace/itc-build-tools/src/scripts/it-build-ctl publish-containers'
+                        }
+                    }
+
+
+            """
+  def scriptsectionPublishNPM =
+            """
+                    stage('Publish NPM') {
+                        if ("\${DEBUG}" == 'no'){
+                           sh '\${JENKINS_HOME}/workspace/itc-build-tools/src/scripts/it-build-ctl publish-npm'
+                        }
+                    }
+            """
+
+  def scriptsectionEND =
+        """
+
+
+                stage('Cleanup')
+                 {
+                    echo 'prune and cleanup'
+                    sh 'docker system prune --force'
+                    echo 'sh ./build/builds/current/servicecleanup'
+                    // sh ./build/builds/current/servicecleanup'
+                    //sh 'rm -rf dist/builds'
+                  }
+
+                stage((ciEnv ? ("Diagnostics" ) : "Skip Diagnostics")) {
+
+        if (ciEnv)
+         {
+            if (env.BRANCH_NAME_pullrequest_id)
+             {
+                if ("\${DEBUG}" == 'no')
+                 {
+                        build job: 'seeded.versions-push', parameters: [string(name: 'SOURCE_WORKSPACE', value: "\${env.WORKSPACE}"), string(name: 'TARGET_CONF', value: "\${}")]
+
+                        sh 'git describe --long HEAD |cut -d "-" -f3-9 |cut -c2-8|head -1 > myfile.txt'
+                        TAGNEW = readFile 'myfile.txt'
+                        build job: "${config.jenkins.jobPrefix}env." + diag + ".diagnostics", parameters: [string(name: 'TAGNEW', value:"pr"+env.BRANCH_NAME_pullrequest_id+"-"+TAGNEW.trim() + ""),string(name:'REPONAME', value: env.BRANCH_NAME_pullrequest_destination_repository_name),string(name:'USERNAME', value: username)]
+                 }
+              } else
+              {
+                if ("\${DEBUG}" == 'no')
+                  {
+                        build job: 'seeded.versions-push', parameters: [string(name: 'SOURCE_WORKSPACE', value: "\${env.WORKSPACE}"), string(name: 'TARGET_CONF', value: "\${}")]
+
+                        sh 'echo \${JOB_NAME}|cut -d "." -f2> myfile.txt'
+                        REPONAME = readFile 'myfile.txt'
+                        build job: "${config.jenkins.jobPrefix}env." + diag + ".diagnostics", parameters: [ string(name:'REPONAME', value: REPONAME),string(name:'USERNAME', value: username)]
+                  }
+              }
+          } else
+          {
+                  sh 'echo "WARNING: CI Environment Not Defined - Skipping..."'
+          }
+        }
+            } catch (err) {
+                currentBuild.result = "FAILURE"
+                bitbucketStatusNotify ( buildState: 'FAILED' )
+                throw err
+            } finally {
+                if (currentBuild.result == 'SUCCESS') { bitbucketStatusNotify ( buildState: 'SUCCESSFUL' )}
+                println "username \${username}"
+                println "diag \${diag}"
+                if ("\${SLACK}" == 'yes')
+                  {
+                    slackSend message: " \${env.JOB_NAME} - #\${env.BUILD_NUMBER} by \${username} Tag: \${BRANCH_NAME_pullrequest_source_branch_name} Diagnostic: \${diag} \${currentBuild.result} after \${currentBuild.durationString.replace(' and counting', '')} (<\${env.BUILD_URL}|Open>)",
+                    channel: ((currentBuild.result == "FAILURE")?"Jenkins-failures":"null"),
+                    color: ((currentBuild.result == "FAILURE")?"danger":"good")
+
+                     slackSend message: " \${env.JOB_NAME} - #\${env.BUILD_NUMBER} by \${username} Tag: \${BRANCH_NAME_pullrequest_source_branch_name} Diagnostic: \${diag} \${currentBuild.result} after \${currentBuild.durationString.replace(' and counting', '')} (<\${env.BUILD_URL}|Open>)",
+                    channel: "Jenkins-all",
+                    color: ((currentBuild.result == "FAILURE")?"danger":"good")
+                  }
+            }
+        }
+
+        """
+   def scriptsectionPublishRPM =
+            """
+               if ("\${BRANCH_NAME_pullrequest_source_branch_name}" == 'master')
+                 {
+                    stage('Publish RPMs') {
+                        //sh '\${JENKINS_HOME}/workspace/itc-build-tools/src/scripts/it-build-ctl publish-rpms'
+                        //sh 'env | sort'
+                         if ("\${DEBUG}" == 'no'){
+                           build job: 'seeded.rpm-publish', parameters: [string(name: 'SOURCE_WORKSPACE', value: "\${env.WORKSPACE}"), string(name: 'TARGET_REPO', value: '')]
+                         }
+                     }
+                 }
+
+            """
+    scriptString += scriptsectionStart
+    scriptString += scriptsectionBuildRPM
+    scriptString += scriptsectionPublishRPM
+    if (component.kind == "npm") {scriptString += scriptsectionPublishNPM}
+    if (component.kind != "npm") {scriptString += scriptsectionBuildContainer
+               scriptString += scriptsectionPublishContainer}
+    if (component.kind != "tools") {scriptString += scriptsectionSonar}
+    scriptString += scriptsectionEND
+    pipelineJob(buildJob) {
+        def workspacePath = "${JENKINS_HOME}" + "/workspace"
+        description("Master and PR Pipeline for ${name}")
+        logRotator(9, 9, 9, 4)
+        parameters {
+             stringParam('REV_VER', 'master', 'Last 7 Hash git commit for specific CI Build')
+             stringParam('BRANCH_NAME_pullrequest_source_branch_name', 'master', 'pull request source branch ')
+             choiceParam('SLACK', ['yes','no'])
+             choiceParam('DEBUG', ['no','yes'])
+        }
+       properties {
+           disableConcurrentBuilds()
+         }
+       triggers {
+            genericTrigger {
+                genericVariables {
+                genericVariable {
+                  key("BRANCH_NAME")
+                  value("\$")
+                  expressionType("JSONPath") //Optional, defaults to JSONPath
+                  regexpFilter("") //Optional, defaults to empty string
+                  defaultValue("") //Optional, defaults to empty string
+                }
+            }
+                token("Token-${component.name}")
+                printContributedVariables(false)
+                printPostContent(false)
+                regexpFilterText("")
+                regexpFilterExpression("")
+            }
+        }
+        if (component.blockOn)
+            blockOn(component.blockOn) {
+            blockLevel('GLOBAL')
+            scanQueueFor('ALL')
+        }
+        definition {
+            cps {
+                sandbox()
+    script(scriptString)
+    scriptString = ""
+            }
+         }
+     }
+   }
+ //=================================== MASTER/PR ===================================
